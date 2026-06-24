@@ -1,5 +1,7 @@
 # OCR mit GitHub Actions
 
+GitHub-Repository: <https://github.com/stoykow/cicd_ocr_demo>
+
 Dieses Mini-Projekt zeigt eine sehr einfache CI/CD-Idee:
 
 ```text
