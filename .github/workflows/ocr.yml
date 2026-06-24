@@ -1,0 +1,56 @@
+name: OCR Bild zu Text
+
+on:
+  push:
+    paths:
+      - "bilder/**"
+      - ".github/workflows/ocr.yml"
+  workflow_dispatch:
+
+jobs:
+  ocr:
+    name: Bilder per OCR auslesen
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Tesseract OCR installieren
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tesseract-ocr tesseract-ocr-deu tesseract-ocr-eng
+
+      - name: Bilder zu Text verarbeiten
+        shell: bash
+        run: |
+          mkdir -p ocr-ergebnisse
+          shopt -s nullglob nocaseglob
+
+          files=(bilder/*.png bilder/*.jpg bilder/*.jpeg bilder/*.tif bilder/*.tiff)
+
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "Keine Bilddateien gefunden." | tee ocr-ergebnisse/HINWEIS.txt
+            echo "Lege eine PNG-, JPG- oder TIFF-Datei in den Ordner bilder/ und pushe erneut." >> ocr-ergebnisse/HINWEIS.txt
+            exit 0
+          fi
+
+          for file in "${files[@]}"; do
+            base="$(basename "$file")"
+            name="${base%.*}"
+            echo "Verarbeite $file"
+            tesseract "$file" "ocr-ergebnisse/$name" -l deu+eng
+          done
+
+          echo "Erzeugte Dateien:"
+          ls -la ocr-ergebnisse
+
+      - name: OCR-Ergebnisse als Artefakt bereitstellen
+        uses: actions/upload-artifact@v4
+        with:
+          name: ocr-ergebnisse
+          path: ocr-ergebnisse/
+          if-no-files-found: warn
